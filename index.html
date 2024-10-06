@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Yugu</title>
+  <style>
+    /* Global Styles */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+    }
+
+    .container {
+      max-width: 100%;
+      padding: 20px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      text-align: center;
+    }
+
+    .folder-input-section {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 1rem;
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      width: 100%;
+    }
+
+    button {
+      padding: 10px 15px;
+      border: none;
+      border-radius: 4px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    #addFolderButton {
+      background-color: #007bff;
+      color: white;
+    }
+
+    #addFolderButton:hover {
+      background-color: #0056b3;
+    }
+
+    .folder {
+      background-color: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      margin-bottom: 15px;
+    }
+
+    .folder h2 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .folder .folder-actions button {
+      margin-right: 10px;
+    }
+
+    .folder .task-list {
+      margin-top: 1rem;
+    }
+
+    .folder .task-list li {
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .folder .task-list li .task {
+      margin-right: auto;
+    }
+
+    .folder .task-list input[type="checkbox"] {
+      margin-left: 10px;
+      transform: scale(1.5); /* Increase the size of the checkbox */
+    }
+
+    .task-input-section {
+      margin-bottom: 1rem;
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    .task-input-section input[type="text"] {
+      flex-grow: 1;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+
+    .task-input-section button {
+      width: 100px;
+      background-color: #007bff;
+      color: white;
+    }
+
+    .task-input-section button:hover {
+      background-color: #0056b3;
+    }
+
+    /* Media Queries for Responsive Design */
+    @media (max-width: 768px) {
+      .container {
+        padding: 10px;
+      }
+
+      h1 {
+        font-size: 1.8rem;
+      }
+
+      .folder {
+        padding: 10px;
+      }
+
+      .folder h2 {
+        font-size: 1.3rem;
+      }
+
+      .task-input-section input[type="text"] {
+        width: calc(100% - 120px);
+      }
+
+      .task-input-section button {
+        width: 100%;
+        margin-top: 10px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 1.6rem;
+      }
+
+      .folder h2 {
+        font-size: 1.2rem;
+      }
+
+      .folder {
+        padding: 8px;
+      }
+
+      .task-input-section {
+        flex-direction: column;
+      }
+
+      .task-input-section input[type="text"] {
+        width: 100%;
+        margin-right: 0;
+      }
+
+      .task-input-section button {
+        width: 100%;
+      }
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Todo</h1>
+
+    <!-- Add Folder Section -->
+    <div class="folder-input-section">
+      <input type="text" id="folderName" placeholder="Enter folder name" />
+      <button id="addFolderButton">Add Folder</button>
+    </div>
+
+    <!-- Folder List -->
+    <div id="folderList"></div>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const folderNameInput = document.getElementById('folderName');
+      const addFolderButton = document.getElementById('addFolderButton');
+      const folderList = document.getElementById('folderList');
+
+      let folders = JSON.parse(localStorage.getItem('folders')) || [];
+
+      const renderFolders = () => {
+        folderList.innerHTML = '';
+
+        folders.forEach((folder) => {
+          const folderDiv = document.createElement('div');
+          folderDiv.classList.add('folder');
+
+          folderDiv.innerHTML = `
+            <h2>${folder.name}</h2>
+            <div class="folder-actions">
+              <button onclick="viewTasks(${folder.id})">View Tasks</button>
+              <button onclick="deleteFolder(${folder.id})">Delete Folder</button>
+            </div>
+            <div id="taskList-${folder.id}" style="display: none;">
+              <div class="task-input-section">
+                <input type="text" id="taskText-${folder.id}" placeholder="Enter task text">
+                <button onclick="addTask(${folder.id})">Add Task</button>
+              </div>
+              <ul class="task-list">${renderTasks(folder)}</ul>
+            </div>
+          `;
+
+          folderList.appendChild(folderDiv);
+        });
+      };
+
+      const renderTasks = (folder) => {
+        return folder.tasks
+          .map(
+            (task, index) => `
+            <li>
+              <span>${task}</span>
+              <input type="checkbox" id="taskCheckbox-${folder.id}-${index}" />
+            </li>
+          `
+          )
+          .join('');
+      };
+
+      const saveFolders = () => {
+        localStorage.setItem('folders', JSON.stringify(folders));
+      };
+
+      window.addTask = (folderId) => {
+        const folder = folders.find((f) => f.id === folderId);
+        const taskText = document.getElementById(`taskText-${folderId}`).value.trim();
+        if (taskText !== '') {
+          folder.tasks.push(taskText);
+          saveFolders();
+          renderFolders();
+        }
+      };
+
+      window.deleteFolder = (folderId) => {
+        folders = folders.filter((f) => f.id !== folderId);
+        saveFolders();
+        renderFolders();
+      };
+
+      window.viewTasks = (folderId) => {
+        const taskList = document.getElementById(`taskList-${folderId}`);
+        taskList.style.display = taskList.style.display === 'none' ? 'block' : 'none';
+      };
+
+      addFolderButton.addEventListener('click', () => {
+        const folderName = folderNameInput.value.trim();
+        if (folderName !== '') {
+          const newFolder = {
+            id: folders.length + 1,
+            name: folderName,
+            tasks: [],
+          };
+          folders.push(newFolder);
+          folderNameInput.value = '';
+          saveFolders();
+          renderFolders();
+        }
+      });
+
+      renderFolders();
+    });
+  </script>
+</body>
+</html>
